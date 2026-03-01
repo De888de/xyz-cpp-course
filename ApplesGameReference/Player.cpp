@@ -1,3 +1,4 @@
+#include "Game.h"
 #include "Player.h"
 #include <assert.h>
 #include "GameSettings.h"
@@ -28,21 +29,25 @@ namespace ApplesGame
 			case PlayerDirection::Up:
 			{
 				player.position.y -= player.speed * timeDelta;
+				player.sprite.setRotation(-90.f);
 				break;
 			}
 			case PlayerDirection::Right:
 			{
 				player.position.x += player.speed * timeDelta;
+				player.sprite.setRotation(0.f);
 				break;
 			}
 			case PlayerDirection::Down:
 			{
 				player.position.y += player.speed * timeDelta;
+				player.sprite.setRotation(90.f);
 				break;
 			}
 			case PlayerDirection::Left:
 			{
 				player.position.x -= player.speed * timeDelta;
+				player.sprite.setRotation(180.f);
 				break;
 			}
 		}
@@ -70,35 +75,9 @@ namespace ApplesGame
 
 		const sf::Vector2f spriteScale = (GetSpriteScale(player.sprite, { PLAYER_SIZE, PLAYER_SIZE }));
 
-		// We need to rotate and flip sprite to match player direction
-		switch (player.direction)
-		{
-			case PlayerDirection::Up:
-			{
-				player.sprite.setScale(spriteScale.x, spriteScale.y);
-				player.sprite.setRotation(-90.f);
-				break;
-			}
-			case PlayerDirection::Right:
-			{
-				player.sprite.setScale(spriteScale.x, spriteScale.y);
-				player.sprite.setRotation(0.f);
-				break;
-			}
-			case PlayerDirection::Down:
-			{
-				player.sprite.setScale(spriteScale.x, spriteScale.y);
-				player.sprite.setRotation(90.f);
-				break;
-			}
-			case PlayerDirection::Left:
-			{
-				player.sprite.setScale(-spriteScale.x, spriteScale.y);
-				player.sprite.setRotation(0.f);
-				break;
-			}
-		}
+		
 
 		window.draw(player.sprite);
 	}
+	
 }

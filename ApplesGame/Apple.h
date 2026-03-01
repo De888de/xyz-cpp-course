@@ -1,21 +1,22 @@
 #pragma once
-#include <SFML/Graphics.hpp>
-#include "Constants.h"
 #include "Math.h"
+#include "Constants.h"
+#include <SFML/Graphics.hpp>
 
 namespace ApplesGame
 {
-	struct Game;
+    // Предварительное объявление структуры Game
+    struct Game;
 
-	struct Apple
-	{
-		Position2D position;
-		sf::Sprite sprite;
-	};
+    struct Apple
+    {
+        Position2D position;
+        sf::Sprite sprite;
 
-	void InitApple(Apple& apple, const Game& game);
-	void SetApplePosition(Apple& apple, const Position2D& position);
-	Circle GetAppleCollider(const Apple& apple);
-	void DrawApple(Apple& apple, sf::RenderWindow& window);
+        void Init(const Game& game);
+        void Reset();
+    };
 }
+
+
 

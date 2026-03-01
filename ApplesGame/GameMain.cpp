@@ -1,66 +1,62 @@
-﻿// ©2023, XYZ School. All rights reserved.
-// Authored by Aleksandr Rybalka (polterageist@gmail.com)
-
-#include <SFML/Graphics.hpp>
-#include <SFML/Audio.hpp>
+﻿#include "Game.h"
 #include "Constants.h"
-#include "Game.h"
-
+#include <SFML/Graphics.hpp>
+#include <ctime>
+#include <cstdlib>
+#include <SFML/Audio.hpp>
 
 int main()
 {
-	using namespace ApplesGame;
-	int seed = (int)time(nullptr);
-	srand(seed);
-	// Init window
-	sf::RenderWindow window(sf::VideoMode(SCREEN_WIDTH, SCREEN_HEIGHT), "Apples game!");
+    using namespace ApplesGame;
 
-	// Game initialization
-	Game game;
-	InitGame(game);
-	
-	// Init game clocks
-	sf::Clock gameClock;
-	float lastTime = gameClock.getElapsedTime().asSeconds();
+    int seed = (int)time(nullptr);
+    srand(seed);
 
-	// Main loop
-	while (window.isOpen())
-	{
-		// Reduce framerate to not spam CPU and GPU
-		sf::sleep(sf::milliseconds(16));
+    // Init window
+    sf::RenderWindow window(sf::VideoMode(SCREEN_WIDTH, SCREEN_HEIGHT), "Apples game!");
 
-		// Calculate time delta
-		float currentTime = gameClock.getElapsedTime().asSeconds();
-		float deltaTime = currentTime - lastTime;
-		lastTime = currentTime;
+    // Game initialization
+    Game game;
+    InitGame(game);
 
-		// Read events
-		sf::Event event;
-		while (window.pollEvent(event))
-		{
-			if (event.type == sf::Event::Closed)
-			{
-				window.close();
-				break;
-			}
-			if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
-			{
-				window.close();
-				break;
-			}
-		}
+    // Init game clocks
+    sf::Clock gameClock;
+    float lastTime = gameClock.getElapsedTime().asSeconds();
 
-		UpdateGame(game, deltaTime);
+    // Main loop
+    while (window.isOpen())
+    {
+        // Calculate time delta
+        float currentTime = gameClock.getElapsedTime().asSeconds();
+        float deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
 
-		// Draw game
-		window.clear();
-		DrawGame(game, window);
+        // Read events
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+            {
+                window.close();
+                break;
+            }
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
+            {
+                window.close();
+                break;
+            }
+        }
 
-		window.display();
-	}
+        UpdateGame(game, deltaTime);
 
-	// Deinitialization
-	DeinializeGame(game);
+        // Draw game
+        window.clear();
+        DrawGame(game, window);
+        window.display();
+    }
 
-	return 0;
+    // Deinitialization
+    DeinitializeGame(game);
+
+    return 0;
 }
