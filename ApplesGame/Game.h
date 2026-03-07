@@ -1,83 +1,109 @@
 #pragma once
 #include <iostream>
+#include <vector>
+#include <string>
 #include "Player.h"
 #include "Apple.h"
 #include "Rock.h"
 #include "GameTexts.h"
+#include "Background.h"
 #include <SFML/Audio.hpp>
 
 namespace ApplesGame
 {
-    // Битовые флаги для режимов игры
+
     enum GameModeFlags
     {
         GAME_MODE_NONE = 0,
-        GAME_MODE_INFINITE_APPLES = 1 << 0,      // 1 - бесконечные яблоки
-        GAME_MODE_WITH_ACCELERATION = 1 << 1,     // 2 - с ускорением
-        GAME_MODE_HIGH_SPEED = 1 << 2,            // 4 - высокая скорость
-        GAME_MODE_50_APPLES = 1 << 3,             // 8 - 50 яблок
+        GAME_MODE_INFINITE_APPLES = 1 << 0,
+        GAME_MODE_WITH_ACCELERATION = 1 << 1,
+        GAME_MODE_HIGH_SPEED = 1 << 2,
+        GAME_MODE_50_APPLES = 1 << 3,
     };
 
-    // Состояния игры
+
     enum class GameStateType
     {
-        SELECTING_MODE,  // Выбор режима
-        PLAYING,         // Игра
-        GAME_OVER        // Конец игры
+        SELECTING_MODE,
+        PLAYING,
+        GAME_OVER
+    };
+
+
+    struct LeaderboardEntry
+    {
+        std::string name;
+        int score;
     };
 
     struct Game
     {
         Player player;
-        Apple* apples = nullptr;  // Динамический массив
-        int numApples = 0;         // Текущее количество яблок
+        Apple* apples = nullptr;
+        int numApples = 0;
         Rock rocks[NUM_ROCKS];
         GameTexts texts;
-
-        // Фон
-        sf::RectangleShape backgroundShape;
+        Background background;
 
         int score = 0;
-        GameStateType gameState = GameStateType::SELECTING_MODE; // Состояние игры
+        GameStateType gameState = GameStateType::SELECTING_MODE;
 
-        // Режим игры (битовая маска)
-        unsigned int gameMode = GAME_MODE_WITH_ACCELERATION; // По умолчанию с ускорением
 
-        // Тексты для разных состояний
+        unsigned int gameMode = GAME_MODE_WITH_ACCELERATION;
+
+
         sf::Text modeSelectionText;
-        sf::Text gameOverMenuText;  // Текст в меню Game Over
+        sf::Text gameOverMenuText;
+        sf::Text leaderboardText;
+        sf::Text congratulationText;
 
-        //Resources
+
+        std::vector<LeaderboardEntry> leaderboard;
+        std::string playerName = "Player";
+
+
         sf::Texture playerTexture;
         sf::Texture appleTexture;
         sf::Texture rockTexture;
 
         sf::SoundBuffer eatenApplesBuffer;
+        sf::SoundBuffer brokenApplesBuffer;
         sf::Sound sound;
 
-        sf::Music backgroundMusic;
+        sf::Music music;
     };
 
-    // Декларации функций
+
     void InitGame(Game& game);
     void ResetGame(Game& game);
-    void ReturnToMenu(Game& game);  // Новая функция для возврата в меню
+    void ReturnToMenu(Game& game);
     void UpdateGame(Game& game, float deltaTime);
     void DrawGame(Game& game, sf::RenderWindow& window);
     void DeinitializeGame(Game& game);
 
-    // Функции для работы с режимами
+
     void SetGameMode(Game& game, unsigned int mode);
     bool HasGameMode(Game& game, unsigned int mode);
-    void PrintGameModes(const Game& game);
-    void ApplyGameMode(Game& game); // Применяет выбранный режим
+    void ApplyGameMode(Game& game);
+    void HandleModeSelection(Game& game);
 
-    // Функции для работы с фоном
-    void InitBackground(Game& game);
-    void SetBackgroundGameOverColor(Game& game);
-    void SetBackgroundNormalColor(Game& game);
 
-    // Функции для инициализации текстов
+    void HandlePlayerInput(Game& game);
+    void HandleAppleCollisions(Game& game);
+    void HandleRockCollisions(Game& game);
+    void HandleBorderCollisions(Game& game);
+    void HandleGameOverInput(Game& game);
+
+
     void InitModeSelectionText(Game& game);
-    void InitGameOverMenuText(Game& game); // Новая функция
+    void InitGameOverMenuText(Game& game);
+    void InitLeaderboardText(Game& game);
+    void InitCongratulationText(Game& game);
+
+
+    void GenerateLeaderboard(Game& game);
+    void UpdateLeaderboard(Game& game);
+    void SortLeaderboard(std::vector<LeaderboardEntry>& leaderboard);
+    std::string FormatLeaderboard(const Game& game);
+    void UpdateCongratulationText(Game& game);
 }
