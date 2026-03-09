@@ -40,14 +40,10 @@ int main()
                 window.close();
                 break;
             }
-            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
-            {
-                window.close();
-                break;
-            }
         }
 
-        UpdateGame(game, deltaTime);
+        // Update game with window parameter
+        UpdateGame(game, deltaTime, window); 
 
         // Draw game
         window.clear();

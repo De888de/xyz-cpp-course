@@ -2,6 +2,7 @@
 #include "Math.h"
 #include "Constants.h"
 #include <SFML/Window/Keyboard.hpp>
+#include <SFML/Window/Window.hpp>
 #include <cassert>
 #include <iostream>
 #include <sstream>
@@ -9,7 +10,7 @@
 
 namespace ApplesGame
 {
-    // Инициализация текстов меню
+    // Initialization of menu texts
     void InitModeSelectionText(Game& game)
     {
         game.modeSelectionText.setFont(game.texts.font);
@@ -44,8 +45,24 @@ namespace ApplesGame
             "Press M to return to menu\n"
             "Press ESC to exit"
         );
+    }
 
+    void InitExitConfirmText(Game& game)
+    {
+        game.exitConfirmText.setFont(game.texts.font);
+        game.exitConfirmText.setCharacterSize(20);
+        game.exitConfirmText.setFillColor(sf::Color::White);
+        game.exitConfirmText.setStyle(sf::Text::Bold);
+        game.exitConfirmText.setString(
+            "Are you sure you want to exit?\n\n"
+            "Y - Yes, exit the game\n"
+            "N - No, return to game"
+        );
 
+        sf::FloatRect textRect = game.exitConfirmText.getLocalBounds();
+        game.exitConfirmText.setOrigin(textRect.left + textRect.width / 2.0f,
+            textRect.top + textRect.height / 2.0f);
+        game.exitConfirmText.setPosition(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT / 2.f);
     }
 
     void InitLeaderboardText(Game& game)
@@ -69,14 +86,13 @@ namespace ApplesGame
         ss << "Congratulations, you've scored " << game.score << " points!";
         game.congratulationText.setString(ss.str());
 
-
         sf::FloatRect textRect = game.congratulationText.getLocalBounds();
         game.congratulationText.setOrigin(textRect.left + textRect.width / 2.0f,
             textRect.top + textRect.height / 2.0f);
         game.congratulationText.setPosition(SCREEN_WIDTH / 2.f, 80);
     }
 
-
+    // Functions for working with modes
     void SetGameMode(Game& game, unsigned int mode)
     {
         game.gameMode = mode;
@@ -89,32 +105,21 @@ namespace ApplesGame
 
     void ApplyGameMode(Game& game)
     {
+        // We determine the number of apples
+        int numApples = HasGameMode(game, GAME_MODE_50_APPLES) ? 50 : 20;
 
-        if (HasGameMode(game, GAME_MODE_50_APPLES))
-        {
-            game.numApples = 50;
-        }
-        else
-        {
-            game.numApples = 20;
-        }
+        // We clean and fill the vector of apples
+        game.apples.clear();
+        game.apples.reserve(numApples);
 
-
-        if (game.apples != nullptr)
+        for (int i = 0; i < numApples; ++i)
         {
-            delete[] game.apples;
+            Apple apple;
+            apple.Init(game);
+            game.apples.push_back(apple);
         }
 
-
-        game.apples = new Apple[game.numApples];
-
-
-        for (int i = 0; i < game.numApples; ++i)
-        {
-            game.apples[i].Init(game);
-        }
-
-
+        // Applying speed
         if (HasGameMode(game, GAME_MODE_HIGH_SPEED))
         {
             game.player.speed = INITIAL_SPEED * 1.5f;
@@ -124,7 +129,7 @@ namespace ApplesGame
             game.player.speed = INITIAL_SPEED;
         }
 
-        std::cout << "Applied game mode with " << game.numApples << " apples" << std::endl;
+        std::cout << "Applied game mode with " << game.apples.size() << " apples" << std::endl;
     }
 
     void HandleModeSelection(Game& game)
@@ -178,22 +183,23 @@ namespace ApplesGame
             GenerateLeaderboard(game);
             game.gameState = GameStateType::PLAYING;
         }
+        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
+        {
+            game.previousState = game.gameState;
+            game.gameState = GameStateType::CONFIRM_EXIT;
+        }
     }
 
-
+    // Functions for working with the leaderboard
     void SortLeaderboard(std::vector<LeaderboardEntry>& leaderboard)
     {
-
         for (size_t i = 0; i < leaderboard.size() - 1; ++i)
         {
             for (size_t j = 0; j < leaderboard.size() - i - 1; ++j)
             {
                 if (leaderboard[j].score < leaderboard[j + 1].score)
                 {
-
-                    LeaderboardEntry temp = leaderboard[j];
-                    leaderboard[j] = leaderboard[j + 1];
-                    leaderboard[j + 1] = temp;
+                    std::swap(leaderboard[j], leaderboard[j + 1]);
                 }
             }
         }
@@ -203,10 +209,8 @@ namespace ApplesGame
     {
         game.leaderboard.clear();
 
-
         std::vector<std::string> names = { "Alice", "Bob", "Carol", "Dave", "Eve", "Frank", "Grace", "Henry", "Ivy", "Jack" };
         std::vector<int> scores = { 120, 85, 55, 30, 150, 95, 70, 45, 110, 65 };
-
 
         for (size_t i = 0; i < names.size(); ++i)
         {
@@ -216,19 +220,16 @@ namespace ApplesGame
             game.leaderboard.push_back(entry);
         }
 
-
         LeaderboardEntry playerEntry;
         playerEntry.name = game.playerName;
         playerEntry.score = 0;
         game.leaderboard.push_back(playerEntry);
-
 
         SortLeaderboard(game.leaderboard);
     }
 
     void UpdateLeaderboard(Game& game)
     {
-
         for (auto& entry : game.leaderboard)
         {
             if (entry.name == game.playerName)
@@ -237,7 +238,6 @@ namespace ApplesGame
                 break;
             }
         }
-
 
         SortLeaderboard(game.leaderboard);
     }
@@ -254,8 +254,7 @@ namespace ApplesGame
 
             ss << count + 1 << ". " << entry.name;
 
-
-            int dotsCount = 20 - entry.name.length() - std::to_string(entry.score).length();
+            int dotsCount = 20 - static_cast<int>(entry.name.length()) - static_cast<int>(std::to_string(entry.score).length());
             for (int i = 0; i < dotsCount; ++i)
             {
                 ss << ".";
@@ -269,43 +268,48 @@ namespace ApplesGame
         return ss.str();
     }
 
-
+    // Basic initialization of the game
     void InitGame(Game& game)
     {
-
+        // Loading resources
         assert(game.playerTexture.loadFromFile(RESOURCES_PATH + "Player.png"));
         assert(game.appleTexture.loadFromFile(RESOURCES_PATH + "Apple.png"));
         assert(game.rockTexture.loadFromFile(RESOURCES_PATH + "Rock.png"));
         assert(game.eatenApplesBuffer.loadFromFile(RESOURCES_PATH + "apple_eat.wav"));
         assert(game.brokenApplesBuffer.loadFromFile(RESOURCES_PATH + "game_over.wav"));
 
-
+        // Music
         game.music.openFromFile(RESOURCES_PATH + "background_music.ogg");
         game.music.setLoop(true);
         game.music.play();
 
-
+        // Initializing components
         game.background.Init();
         game.texts.Init();
         game.player.Init(game);
 
-
+        // Initialization of menu texts
         InitModeSelectionText(game);
         InitGameOverMenuText(game);
         InitLeaderboardText(game);
         InitCongratulationText(game);
+        InitExitConfirmText(game);
 
+        // Initialization of stones (vector)
+        game.rocks.clear();
+        game.rocks.reserve(NUM_ROCKS);
 
         for (int i = 0; i < NUM_ROCKS; ++i)
         {
-            game.rocks[i].Init(game);
+            Rock rock;
+            rock.Init(game);
+            game.rocks.push_back(rock);
         }
 
-
+        // Initial state
         game.score = 0;
         game.gameState = GameStateType::SELECTING_MODE;
-        game.apples = nullptr;
-        game.numApples = 0;
+        game.apples.clear();
     }
 
     void ResetGame(Game& game)
@@ -313,15 +317,16 @@ namespace ApplesGame
         game.background.SetNormalColor();
         game.player.Reset();
 
-
+        // Applying the mode again
         ApplyGameMode(game);
 
-
+        // Updating the leaderboard
         UpdateLeaderboard(game);
 
-        for (int i = 0; i < NUM_ROCKS; ++i)
+        // Dropping the stones
+        for (auto& rock : game.rocks)
         {
-            game.rocks[i].Reset();
+            rock.Reset();
         }
 
         game.score = 0;
@@ -331,27 +336,21 @@ namespace ApplesGame
 
     void ReturnToMenu(Game& game)
     {
-        if (game.apples != nullptr)
-        {
-            delete[] game.apples;
-            game.apples = nullptr;
-        }
-
+        game.apples.clear();
         game.background.SetNormalColor();
         game.player.Reset();
 
-        for (int i = 0; i < NUM_ROCKS; ++i)
+        for (auto& rock : game.rocks)
         {
-            game.rocks[i].Reset();
+            rock.Reset();
         }
 
         game.score = 0;
         game.texts.UpdateScore(0);
-        game.numApples = 0;
         game.gameState = GameStateType::SELECTING_MODE;
     }
 
-
+    // Game Features
     void HandlePlayerInput(Game& game)
     {
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
@@ -378,28 +377,23 @@ namespace ApplesGame
 
     void HandleAppleCollisions(Game& game)
     {
-        for (int i = 0; i < game.numApples; ++i)
+        for (auto it = game.apples.begin(); it != game.apples.end(); )
         {
             if (IsCirclesCollide(game.player.position, PLAYER_SIZE / 2.f,
-                game.apples[i].position, APPLE_SIZE / 2.f))
+                it->position, APPLE_SIZE / 2.f))
             {
-
+                // The sound of eating
                 game.sound.setBuffer(game.eatenApplesBuffer);
                 game.sound.play();
 
                 if (HasGameMode(game, GAME_MODE_INFINITE_APPLES))
                 {
-                    game.apples[i].Reset();
+                    it->Reset();
+                    ++it;
                 }
                 else
                 {
-
-                    for (int j = i; j < game.numApples - 1; ++j)
-                    {
-                        game.apples[j] = game.apples[j + 1];
-                    }
-                    game.numApples--;
-                    i--;
+                    it = game.apples.erase(it);
                 }
 
                 game.score++;
@@ -411,30 +405,36 @@ namespace ApplesGame
 
                 game.texts.UpdateScore(game.score);
 
-                if (!HasGameMode(game, GAME_MODE_INFINITE_APPLES) && game.numApples <= 0)
+                if (!HasGameMode(game, GAME_MODE_INFINITE_APPLES) && game.apples.empty())
                 {
-
                     UpdateLeaderboard(game);
                     game.gameState = GameStateType::GAME_OVER;
                 }
 
-                break;
+                if (!HasGameMode(game, GAME_MODE_INFINITE_APPLES))
+                {
+                    break;
+                }
+            }
+            else
+            {
+                ++it;
             }
         }
     }
 
     void HandleRockCollisions(Game& game)
     {
-        for (int i = 0; i < NUM_ROCKS; ++i)
+        for (const auto& rock : game.rocks)
         {
             if (IsRectanglesCollide(game.player.position, { PLAYER_SIZE, PLAYER_SIZE },
-                game.rocks[i].position, { ROCK_SIZE, ROCK_SIZE }))
+                rock.position, { ROCK_SIZE, ROCK_SIZE }))
             {
                 game.sound.setBuffer(game.brokenApplesBuffer);
                 game.sound.play();
-
                 UpdateLeaderboard(game);
                 game.gameState = GameStateType::GAME_OVER;
+                break;
             }
         }
     }
@@ -448,7 +448,6 @@ namespace ApplesGame
         {
             game.sound.setBuffer(game.brokenApplesBuffer);
             game.sound.play();
-
             UpdateLeaderboard(game);
             game.gameState = GameStateType::GAME_OVER;
         }
@@ -464,10 +463,27 @@ namespace ApplesGame
         {
             ReturnToMenu(game);
         }
+        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
+        {
+            game.previousState = game.gameState;
+            game.gameState = GameStateType::CONFIRM_EXIT;
+        }
     }
 
+    void HandleExitConfirmation(Game& game, sf::RenderWindow& window)
+    {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y))
+        {
+            window.close(); // Exit the game
+        }
+        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::N))
+        {
+            game.gameState = game.previousState; // Return to the previous state
+        }
+    }
 
-    void UpdateGame(Game& game, float deltaTime)
+    // Main update function
+    void UpdateGame(Game& game, float deltaTime, sf::RenderWindow& window)
     {
         if (deltaTime > 0.1f) deltaTime = 0.1f;
 
@@ -483,59 +499,78 @@ namespace ApplesGame
             HandleAppleCollisions(game);
             HandleRockCollisions(game);
             HandleBorderCollisions(game);
+
+            // We check ESC during the game
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
+            {
+                game.previousState = game.gameState;
+                game.gameState = GameStateType::CONFIRM_EXIT;
+            }
             break;
 
         case GameStateType::GAME_OVER:
             HandleGameOverInput(game);
             break;
+
+        case GameStateType::CONFIRM_EXIT:
+            HandleExitConfirmation(game, window);
+            break;
         }
     }
 
-
+    // The rendering function
     void DrawGame(Game& game, sf::RenderWindow& window)
     {
         window.draw(game.background.sprite);
 
+        // Declaring variables in advance
+        sf::FloatRect leaderboardRect;
+        sf::FloatRect menuRect;
+
         switch (game.gameState)
         {
         case GameStateType::SELECTING_MODE:
+        {
             window.draw(game.modeSelectionText);
             break;
+        }
 
         case GameStateType::PLAYING:
+        {
             window.draw(game.player.sprite);
-            for (int i = 0; i < game.numApples; ++i)
+
+            for (const auto& apple : game.apples)
             {
-                window.draw(game.apples[i].sprite);
+                window.draw(apple.sprite);
             }
-            for (int i = 0; i < NUM_ROCKS; ++i)
+
+            for (const auto& rock : game.rocks)
             {
-                window.draw(game.rocks[i].sprite);
+                window.draw(rock.sprite);
             }
+
             window.draw(game.texts.scoreText);
             break;
+        }
 
         case GameStateType::GAME_OVER:
+        {
             game.background.SetGameOverColor();
             window.draw(game.background.sprite);
-
 
             UpdateCongratulationText(game);
             window.draw(game.congratulationText);
 
-
             game.leaderboardText.setString(FormatLeaderboard(game));
 
-
-            sf::FloatRect leaderboardRect = game.leaderboardText.getLocalBounds();
+            leaderboardRect = game.leaderboardText.getLocalBounds();
             game.leaderboardText.setOrigin(leaderboardRect.left + leaderboardRect.width / 2.0f,
                 leaderboardRect.top + leaderboardRect.height / 2.0f);
             game.leaderboardText.setPosition(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT / 2.f - 40);
 
             window.draw(game.leaderboardText);
 
-
-            sf::FloatRect menuRect = game.gameOverMenuText.getLocalBounds();
+            menuRect = game.gameOverMenuText.getLocalBounds();
             game.gameOverMenuText.setOrigin(menuRect.left + menuRect.width / 2.0f,
                 menuRect.top + menuRect.height / 2.0f);
             game.gameOverMenuText.setPosition(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT / 2.f + 120);
@@ -543,14 +578,26 @@ namespace ApplesGame
             window.draw(game.gameOverMenuText);
             break;
         }
+
+        case GameStateType::CONFIRM_EXIT:
+        {
+            // Darken the background
+            sf::RectangleShape darkOverlay;
+            darkOverlay.setSize(sf::Vector2f(SCREEN_WIDTH, SCREEN_HEIGHT));
+            darkOverlay.setFillColor(sf::Color(0, 0, 0, 200));
+            window.draw(darkOverlay);
+
+            // Drawing a dialog on top of
+            window.draw(game.exitConfirmText);
+            break;
+        }
+        }
     }
 
     void DeinitializeGame(Game& game)
     {
-        if (game.apples != nullptr)
-        {
-            delete[] game.apples;
-            game.apples = nullptr;
-        }
+        game.apples.clear();
+        game.rocks.clear();
+        game.leaderboard.clear();
     }
-}
+} 
