@@ -12,26 +12,20 @@ int main()
     int seed = (int)time(nullptr);
     srand(seed);
 
-    // Init window
     sf::RenderWindow window(sf::VideoMode(SCREEN_WIDTH, SCREEN_HEIGHT), "Apples game!");
 
-    // Game initialization
     Game game;
     InitGame(game);
 
-    // Init game clocks
     sf::Clock gameClock;
     float lastTime = gameClock.getElapsedTime().asSeconds();
 
-    // Main loop
     while (window.isOpen())
     {
-        // Calculate time delta
         float currentTime = gameClock.getElapsedTime().asSeconds();
         float deltaTime = currentTime - lastTime;
         lastTime = currentTime;
 
-        // Read events
         sf::Event event;
         while (window.pollEvent(event))
         {
@@ -42,16 +36,13 @@ int main()
             }
         }
 
-        // Update game with window parameter
-        UpdateGame(game, deltaTime, window); 
+        UpdateGame(game, deltaTime, window);
 
-        // Draw game
         window.clear();
         DrawGame(game, window);
         window.display();
     }
 
-    // Deinitialization
     DeinitializeGame(game);
 
     return 0;

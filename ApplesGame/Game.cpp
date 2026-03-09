@@ -1,6 +1,7 @@
 #include "Game.h"
 #include "Math.h"
 #include "Constants.h"
+#include "Utils.h" 
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Window.hpp>
 #include <cassert>
@@ -51,7 +52,7 @@ namespace ApplesGame
     {
         game.exitConfirmText.setFont(game.texts.font);
         game.exitConfirmText.setCharacterSize(20);
-        game.exitConfirmText.setFillColor(sf::Color::White);
+        game.exitConfirmText.setFillColor(sf::Color::Red);
         game.exitConfirmText.setStyle(sf::Text::Bold);
         game.exitConfirmText.setString(
             "Are you sure you want to exit?\n\n"
@@ -138,49 +139,49 @@ namespace ApplesGame
         {
             game.gameMode = GAME_MODE_WITH_ACCELERATION;
             ApplyGameMode(game);
-            GenerateLeaderboard(game);
+            game.leaderboard.Generate(); 
             game.gameState = GameStateType::PLAYING;
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num2))
         {
             game.gameMode = GAME_MODE_NONE;
             ApplyGameMode(game);
-            GenerateLeaderboard(game);
+            game.leaderboard.Generate();
             game.gameState = GameStateType::PLAYING;
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3))
         {
             game.gameMode = GAME_MODE_WITH_ACCELERATION | GAME_MODE_50_APPLES;
             ApplyGameMode(game);
-            GenerateLeaderboard(game);
+            game.leaderboard.Generate();
             game.gameState = GameStateType::PLAYING;
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num4))
         {
             game.gameMode = GAME_MODE_WITH_ACCELERATION | GAME_MODE_INFINITE_APPLES;
             ApplyGameMode(game);
-            GenerateLeaderboard(game);
+            game.leaderboard.Generate();
             game.gameState = GameStateType::PLAYING;
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num5))
         {
             game.gameMode = GAME_MODE_INFINITE_APPLES;
             ApplyGameMode(game);
-            GenerateLeaderboard(game);
+            game.leaderboard.Generate();
             game.gameState = GameStateType::PLAYING;
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num6))
         {
             game.gameMode = GAME_MODE_WITH_ACCELERATION | GAME_MODE_INFINITE_APPLES | GAME_MODE_50_APPLES;
             ApplyGameMode(game);
-            GenerateLeaderboard(game);
+            game.leaderboard.Generate();
             game.gameState = GameStateType::PLAYING;
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num7))
         {
             game.gameMode = GAME_MODE_WITH_ACCELERATION | GAME_MODE_INFINITE_APPLES | GAME_MODE_50_APPLES | GAME_MODE_HIGH_SPEED;
             ApplyGameMode(game);
-            GenerateLeaderboard(game);
+            game.leaderboard.Generate();
             game.gameState = GameStateType::PLAYING;
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
@@ -190,88 +191,10 @@ namespace ApplesGame
         }
     }
 
-    // Functions for working with the leaderboard
-    void SortLeaderboard(std::vector<LeaderboardEntry>& leaderboard)
-    {
-        for (size_t i = 0; i < leaderboard.size() - 1; ++i)
-        {
-            for (size_t j = 0; j < leaderboard.size() - i - 1; ++j)
-            {
-                if (leaderboard[j].score < leaderboard[j + 1].score)
-                {
-                    std::swap(leaderboard[j], leaderboard[j + 1]);
-                }
-            }
-        }
-    }
-
-    void GenerateLeaderboard(Game& game)
-    {
-        game.leaderboard.clear();
-
-        std::vector<std::string> names = { "Alice", "Bob", "Carol", "Dave", "Eve", "Frank", "Grace", "Henry", "Ivy", "Jack" };
-        std::vector<int> scores = { 120, 85, 55, 30, 150, 95, 70, 45, 110, 65 };
-
-        for (size_t i = 0; i < names.size(); ++i)
-        {
-            LeaderboardEntry entry;
-            entry.name = names[i];
-            entry.score = scores[i];
-            game.leaderboard.push_back(entry);
-        }
-
-        LeaderboardEntry playerEntry;
-        playerEntry.name = game.playerName;
-        playerEntry.score = 0;
-        game.leaderboard.push_back(playerEntry);
-
-        SortLeaderboard(game.leaderboard);
-    }
-
-    void UpdateLeaderboard(Game& game)
-    {
-        for (auto& entry : game.leaderboard)
-        {
-            if (entry.name == game.playerName)
-            {
-                entry.score = game.score;
-                break;
-            }
-        }
-
-        SortLeaderboard(game.leaderboard);
-    }
-
-    std::string FormatLeaderboard(const Game& game)
-    {
-        std::stringstream ss;
-        ss << "===== LEADERBOARD =====\n\n";
-
-        int count = 0;
-        for (const auto& entry : game.leaderboard)
-        {
-            if (count >= 5) break;
-
-            ss << count + 1 << ". " << entry.name;
-
-            int dotsCount = 20 - static_cast<int>(entry.name.length()) - static_cast<int>(std::to_string(entry.score).length());
-            for (int i = 0; i < dotsCount; ++i)
-            {
-                ss << ".";
-            }
-
-            ss << " " << entry.score << "\n";
-            count++;
-        }
-
-        ss << "\n=======================";
-        return ss.str();
-    }
-
-    // Basic initialization of the game
+    // initializing the game
     void InitGame(Game& game)
     {
-        // Loading resources
+        //  Загрузка ресурсов
         assert(game.playerTexture.loadFromFile(RESOURCES_PATH + "Player.png"));
         assert(game.appleTexture.loadFromFile(RESOURCES_PATH + "Apple.png"));
         assert(game.rockTexture.loadFromFile(RESOURCES_PATH + "Rock.png"));
@@ -317,11 +240,11 @@ namespace ApplesGame
         game.background.SetNormalColor();
         game.player.Reset();
 
-        // Applying the mode again
+        // Applying the mode 
         ApplyGameMode(game);
 
         // Updating the leaderboard
-        UpdateLeaderboard(game);
+        game.leaderboard.UpdatePlayerScore(game.score);
 
         // Dropping the stones
         for (auto& rock : game.rocks)
@@ -407,7 +330,7 @@ namespace ApplesGame
 
                 if (!HasGameMode(game, GAME_MODE_INFINITE_APPLES) && game.apples.empty())
                 {
-                    UpdateLeaderboard(game);
+                    game.leaderboard.UpdatePlayerScore(game.score); 
                     game.gameState = GameStateType::GAME_OVER;
                 }
 
@@ -432,7 +355,7 @@ namespace ApplesGame
             {
                 game.sound.setBuffer(game.brokenApplesBuffer);
                 game.sound.play();
-                UpdateLeaderboard(game);
+                game.leaderboard.UpdatePlayerScore(game.score); 
                 game.gameState = GameStateType::GAME_OVER;
                 break;
             }
@@ -448,7 +371,7 @@ namespace ApplesGame
         {
             game.sound.setBuffer(game.brokenApplesBuffer);
             game.sound.play();
-            UpdateLeaderboard(game);
+            game.leaderboard.UpdatePlayerScore(game.score); 
             game.gameState = GameStateType::GAME_OVER;
         }
     }
@@ -474,11 +397,11 @@ namespace ApplesGame
     {
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y))
         {
-            window.close(); // Exit the game
+            window.close();
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::N))
         {
-            game.gameState = game.previousState; // Return to the previous state
+            game.gameState = game.previousState;
         }
     }
 
@@ -500,7 +423,6 @@ namespace ApplesGame
             HandleRockCollisions(game);
             HandleBorderCollisions(game);
 
-            // We check ESC during the game
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
             {
                 game.previousState = game.gameState;
@@ -523,7 +445,6 @@ namespace ApplesGame
     {
         window.draw(game.background.sprite);
 
-        // Declaring variables in advance
         sf::FloatRect leaderboardRect;
         sf::FloatRect menuRect;
 
@@ -561,7 +482,8 @@ namespace ApplesGame
             UpdateCongratulationText(game);
             window.draw(game.congratulationText);
 
-            game.leaderboardText.setString(FormatLeaderboard(game));
+            // Using the Format() method of the Leaderboard class
+            game.leaderboardText.setString(game.leaderboard.Format());
 
             leaderboardRect = game.leaderboardText.getLocalBounds();
             game.leaderboardText.setOrigin(leaderboardRect.left + leaderboardRect.width / 2.0f,
@@ -581,13 +503,11 @@ namespace ApplesGame
 
         case GameStateType::CONFIRM_EXIT:
         {
-            // Darken the background
             sf::RectangleShape darkOverlay;
             darkOverlay.setSize(sf::Vector2f(SCREEN_WIDTH, SCREEN_HEIGHT));
             darkOverlay.setFillColor(sf::Color(0, 0, 0, 200));
             window.draw(darkOverlay);
 
-            // Drawing a dialog on top of
             window.draw(game.exitConfirmText);
             break;
         }
@@ -598,6 +518,6 @@ namespace ApplesGame
     {
         game.apples.clear();
         game.rocks.clear();
-        game.leaderboard.clear();
+        game.leaderboard.Clear();
     }
-} 
+}

@@ -2,39 +2,33 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <SFML/Audio.hpp>
 #include "Player.h"
 #include "Apple.h"
 #include "Rock.h"
 #include "GameTexts.h"
 #include "Background.h"
-#include <SFML/Audio.hpp>
+#include "Leaderboard.h" 
 
 namespace ApplesGame
 {
-    // Bit flags for game modes
+    
     enum GameModeFlags
     {
         GAME_MODE_NONE = 0,
-        GAME_MODE_INFINITE_APPLES = 1 << 0,      // 1 - endless apples
-        GAME_MODE_WITH_ACCELERATION = 1 << 1,     // 2 - with acceleration
-        GAME_MODE_HIGH_SPEED = 1 << 2,            // 4 - high speed
-        GAME_MODE_50_APPLES = 1 << 3,             // 8 - 50 яблок
+        GAME_MODE_INFINITE_APPLES = 1 << 0,
+        GAME_MODE_WITH_ACCELERATION = 1 << 1,
+        GAME_MODE_HIGH_SPEED = 1 << 2,
+        GAME_MODE_50_APPLES = 1 << 3,
     };
 
     // Game States
     enum class GameStateType
     {
-        SELECTING_MODE,  // Mode selection
-        PLAYING,         // Game
-        GAME_OVER,       // End of the game
-        CONFIRM_EXIT     // Confirmation dialog for exit (new state)
-    };
-
-    // The structure for the record in the high score table
-    struct LeaderboardEntry
-    {
-        std::string name;
-        int score;
+        SELECTING_MODE,
+        PLAYING,
+        GAME_OVER,
+        CONFIRM_EXIT
     };
 
     struct Game
@@ -47,21 +41,20 @@ namespace ApplesGame
 
         int score = 0;
         GameStateType gameState = GameStateType::SELECTING_MODE;
-        GameStateType previousState = GameStateType::SELECTING_MODE; // To return after the dialog
+        GameStateType previousState = GameStateType::SELECTING_MODE;
 
-        // Game mode (bitmask)
+    
         unsigned int gameMode = GAME_MODE_WITH_ACCELERATION;
 
-        // Тексты для разных состояний
+        // Texts for different states
         sf::Text modeSelectionText;
         sf::Text gameOverMenuText;
         sf::Text leaderboardText;
         sf::Text congratulationText;
-        sf::Text exitConfirmText;  // New text for the exit dialog
+        sf::Text exitConfirmText;
 
         // Leaderboard
-        std::vector<LeaderboardEntry> leaderboard;
-        std::string playerName = "Player";
+        Leaderboard leaderboard; 
 
         //Resources
         sf::Texture playerTexture;
@@ -75,7 +68,7 @@ namespace ApplesGame
         sf::Music music;
     };
 
-    // The main functions of the game
+    // Main functions of the game
     void InitGame(Game& game);
     void ResetGame(Game& game);
     void ReturnToMenu(Game& game);
@@ -89,25 +82,21 @@ namespace ApplesGame
     void ApplyGameMode(Game& game);
     void HandleModeSelection(Game& game);
 
-    // Auxiliary functions for UpdateGame
+    // Auxiliary functions for updateGame
     void HandlePlayerInput(Game& game);
     void HandleAppleCollisions(Game& game);
     void HandleRockCollisions(Game& game);
     void HandleBorderCollisions(Game& game);
     void HandleGameOverInput(Game& game);
-    void HandleExitConfirmation(Game& game, sf::RenderWindow& window); // New Function
+    void HandleExitConfirmation(Game& game, sf::RenderWindow& window);
 
     // Functions for initializing texts
     void InitModeSelectionText(Game& game);
     void InitGameOverMenuText(Game& game);
     void InitLeaderboardText(Game& game);
     void InitCongratulationText(Game& game);
-    void InitExitConfirmText(Game& game); // New Function
+    void InitExitConfirmText(Game& game);
 
-    // Functions for working with the leaderboard
-    void GenerateLeaderboard(Game& game);
-    void UpdateLeaderboard(Game& game);
-    void SortLeaderboard(std::vector<LeaderboardEntry>& leaderboard);
-    std::string FormatLeaderboard(const Game& game);
+    // The function of updating the greeting text
     void UpdateCongratulationText(Game& game);
 }
